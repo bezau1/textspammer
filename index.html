@@ -70,9 +70,9 @@ function getCount(){
 
 function update(){
   let count=getCount();
-  let base="CHEESE ".repeat(count); // <- IMPORTANT SPACE
+  let base="CHEESE ".repeat(count);
   let word=(txt.value||"CHEESE")+" ";
-  out.value=base.replaceAll("CHEESE ",word);
+  out.value = base.replaceAll("CHEESE ",word).trimEnd(); // 👈 removes final space
 }
 
 txt.oninput=update;
