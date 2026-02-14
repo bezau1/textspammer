@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bezau1's text multiplier</title>
+  <style>
+    :root { color-scheme: dark; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background:#0b0d12;
+      color:#e8eaf0;
+      display:flex;
+      min-height:100vh;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+    .card{
+      width:min(900px, 100%);
+      background:#121624;
+      border:1px solid #1f2640;
+      border-radius:16px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.45);
+      overflow:hidden;
+    }
+    header{ padding:18px 18px 0 18px; }
+    h1{ margin:0 0 10px 0; font-size:22px; letter-spacing:.2px; }
+    .hint{ margin:0 0 14px 0; opacity:.8; font-size:14px; }
+
+    .controls{
+      margin:0 18px 14px 18px;
+      background:#0d1120;
+      border:1px solid #1f2640;
+      border-radius:12px;
+      padding:12px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .left, .right{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .pill{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      padding:8px 10px;
+      border:1px solid #1f2640;
+      background:#0b0f1c;
+      border-radius:999px;
+      font-size:13px;
+      opacity:.95;
+    }
+    input[type="radio"]{ transform: translateY(1px); }
+    input[type="number"]{
+      width:110px;
+      padding:10px 10px;
+      border-radius:12px;
+      border:1px solid #1f2640;
+      background:#0d1120;
+      color:#e8eaf0;
+      outline:none;
+      font-size:14px;
+    }
+
+    .out{
+      margin:0 18px 18px 18px;
+      background:#0d1120;
+      border:1px solid #1f2640;
+      border-radius:12px;
+      padding:14px;
+    }
+    textarea{
+      width:100%;
+      min-height:180px;
+      resize:vertical;
+      border:none;
+      outline:none;
+      background:transparent;
+      color:#e8eaf0;
+      font-size:14px;
+      line-height:1.45;
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+
+    .row{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 18px 18px 18px;
+    }
+    .bottom{
+      display:flex;
+      gap:10px;
+      width:100%;
+      align-items:center;
+    }
+    input[type="text"]{
+      flex:1;
+      padding:12px 12px;
+      border-radius:12px;
+      border:1px solid #1f2640;
+      background:#0d1120;
+      color:#e8eaf0;
+      outline:none;
+      font-size:14px;
+    }
+    button{
+      padding:12px 14px;
+      border-radius:12px;
+      border:1px solid #2a3563;
+      background:#19224a;
+      color:#e8eaf0;
+      cursor:pointer;
+      font-weight:600;
+      transition: transform .05s ease, filter .15s ease;
+      white-space:nowrap;
+    }
+    button:active{ transform: translateY(1px); }
+    button:hover{ filter: brightness(1.1); }
+    .status{
+      font-size:13px;
+      opacity:.85;
+      min-width:120px;
+      text-align:right;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <header>
+      <h1>bezau1's text multiplier</h1>
+      <p class="hint">
+        Choose 10x / 20x / Custom. It builds <b>"CHEESE  "</b> that many times, then swaps CHEESE  with what you typed.
+      </p>
+    </header>
+
+    <div class="controls">
+      <div class="left" role="radiogroup" aria-label="Multiplier">
+        <label class="pill">
+          <input type="radio" name="mult" value="10" checked />
+          10x
+        </label>
+        <label class="pill">
+          <input type="radio" name="mult" value="20" />
+          20x
+        </label>
+        <label class="pill">
+          <input type="radio" name="mult" value="custom" />
+          Custom
+        </label>
+        <input id="customCount" type="number" min="1" max="100000" step="1" value="50" disabled />
+      </div>
+
+      <div class="right">
+        <div class="pill" id="countLabel">Count: 10</div>
+      </div>
+    </div>
+
+    <div class="out">
+      <textarea id="output" readonly></textarea>
+    </div>
+
+    <div class="row">
+      <div class="bottom">
+        <input id="inputText" type="text" placeholder="Type here..." autocomplete="off" />
+        <button id="copyBtn">Copy</button>
+      </div>
+      <div class="status" id="status">Ready</div>
+    </div>
+  </div>
+
+  <script>
+    const input = document.getElementById("inputText");
+    const output = document.getElementById("output");
+    const copyBtn = document.getElementById("copyBtn");
+    const statusEl = document.getElementById("status");
+    const radios = [...document.querySelectorAll('input[name="mult"]')];
+    const customCount = document.getElementById("customCount");
+    const countLabel = document.getElementById("countLabel");
+
+    function getCount() {
+      const selected = radios.find(r => r.checked)?.value || "10";
+      if (selected === "custom") {
+        const n = Number(customCount.value);
+        if (!Number.isFinite(n) || n < 1) return 1;
+        return Math.floor(Math.min(n, 100000));
+      }
+      return Number(selected);
+    }
+
+    function buildCHEESE String(count) {
+      // Efficient enough for up to 100k
+      return "CHEESE  ".repeat(count);
+    }
+
+    function updateUIForMode() {
+      const selected = radios.find(r => r.checked)?.value;
+      const isCustom = selected === "custom";
+      customCount.disabled = !isCustom;
+      customCount.style.opacity = isCustom ? "1" : ".6";
+    }
+
+    function update() {
+      updateUIForMode();
+
+      const val = input.value.trim() || "CHEESE ";
+      const count = getCount();
+      countLabel.textContent = `Count: ${count}`;
+
+      const template = buildCHEESE String(count);
+      output.value = template.replaceAll("CHEESE ", val);
+
+      statusEl.textContent = "Updated";
+      clearTimeout(update._t);
+      update._t = setTimeout(() => statusEl.textContent = "Ready", 800);
+    }
+
+    async function copy() {
+      try {
+        await navigator.clipboard.writeText(output.value);
+        statusEl.textContent = "Copied!";
+      } catch (e) {
+        // fallback
+        output.focus();
+        output.select();
+        document.execCommand("copy");
+        statusEl.textContent = "Copied!";
+      }
+      clearTimeout(copy._t);
+      copy._t = setTimeout(() => statusEl.textContent = "Ready", 1000);
+    }
+
+    input.addEventListener("input", update);
+    radios.forEach(r => r.addEventListener("change", update));
+    customCount.addEventListener("input", update);
+    copyBtn.addEventListener("click", copy);
+
+    // initial
+    update();
+  </script>
+</body>
+</html>
